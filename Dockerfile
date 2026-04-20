@@ -1,9 +1,9 @@
-# ══════════════════════════════════════════════════════════════════
-#  Jardín y Vivero Los Naranjos — Dockerfile
-#  Multi-stage build: imagen mínima y segura para producción
-# ══════════════════════════════════════════════════════════════════
+﻿# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+#  JardÃ­n y Vivero Los Naranjos â€” Dockerfile
+#  Multi-stage build: imagen mÃ­nima y segura para producciÃ³n
+# â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-# ── Stage 1: Builder ──────────────────────────────────────────────
+# â”€â”€ Stage 1: Builder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 FROM python:3.12-slim AS builder
 
 WORKDIR /build
@@ -21,7 +21,7 @@ RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
 
-# ── Stage 2: Runtime ──────────────────────────────────────────────
+# â”€â”€ Stage 2: Runtime â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 FROM python:3.12-slim AS runtime
 
 # Metadatos
@@ -42,7 +42,7 @@ WORKDIR /app
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Copiar código de la aplicación
+# Copiar cÃ³digo de la aplicaciÃ³n
 COPY --chown=vivero:vivero app/ ./app/
 COPY --chown=vivero:vivero static/ ./static/
 COPY --chown=vivero:vivero alembic/ ./alembic/
