@@ -12,8 +12,6 @@ COPY static/ ./static/
 COPY alembic/ ./alembic/
 COPY alembic.ini .
 
-ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 PYTHONPATH=/app PORT=8000
 
-EXPOSE 8000
-
-CMD uvicorn app.main:app --host 0.0.0.0 --port $PORT --log-level info
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info"]
