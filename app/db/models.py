@@ -91,7 +91,7 @@ class Usuario(Base, TimestampMixin):
     password_changed_at   = Column(DateTime(timezone=True), default=utcnow)
 
     # Relaciones
-    ventas         = relationship("Venta", back_populates="cajero")
+    ventas         = relationship("Venta", foreign_keys="[Venta.cajero_id]", back_populates="cajero")
     compras        = relationship("Compra", back_populates="usuario")
     mermas         = relationship("Merma", back_populates="usuario")
     audit_logs     = relationship("AuditLog", back_populates="usuario")
