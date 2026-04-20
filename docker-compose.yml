@@ -1,0 +1,76 @@
+version: "3.9"
+
+# ══════════════════════════════════════════════════════════════════
+#  docker-compose.yml — Desarrollo local
+#  Levanta: app FastAPI + PostgreSQL + pgAdmin (opcional)
+# ══════════════════════════════════════════════════════════════════
+
+services:
+
+  # ── Base de datos PostgreSQL ──────────────────────────────────────
+  db:
+    image: postgres:16-alpine
+    container_name: vivero_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER:     vivero_user
+      POSTGRES_PASSWORD: vivero_pass
+      POSTGRES_DB:       vivero_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vivero_user -d vivero_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Aplicación FastAPI ────────────────────────────────────────────
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: vivero_app
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://vivero_user:vivero_pass@db:5432/vivero_db
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # En desarrollo: monta el código para hot-reload
+      - ./app:/app/app
+      - ./static:/app/static
+    command: >
+      uvicorn app.main:app
+      --host 0.0.0.0
+      --port 8000
+      --reload
+      --log-level debug
+
+  # ── pgAdmin (interfaz visual para la DB) ──────────────────────────
+  # Acceso en: http://localhost:5050
+  # Email: admin@vivero.cl | Password: admin
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: vivero_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL:    admin@vivero.cl
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - db
+    profiles:
+      - tools  # Solo se levanta con: docker-compose --profile tools up
+
+volumes:
+  postgres_data:
+    driver: local

@@ -1,0 +1,28 @@
+# ══════════════════════════════════════════════════
+#  Jardín y Vivero Los Naranjos — Dependencies
+# ══════════════════════════════════════════════════
+
+# Web framework
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+
+# Database
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10        # Driver PostgreSQL
+alembic==1.14.0                # Migraciones de DB
+
+# Validation & settings
+pydantic==2.10.3
+pydantic-settings==2.6.1
+
+# Security
+python-jose[cryptography]==3.3.0   # JWT
+passlib[bcrypt]==1.7.4             # Password hashing
+pyotp==2.9.0                       # 2FA TOTP
+qrcode[pil]==8.0                   # QR codes para 2FA
+
+# Rate limiting
+slowapi==0.1.9
+
+# Utils
+python-multipart==0.0.18           # Form data
