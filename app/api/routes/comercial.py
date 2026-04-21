@@ -418,7 +418,7 @@ def realizar_cierre(
         diferencia=body.efectivo_contado - ef_sistema,
         total_ventas=total_ventas,
         num_ventas=num_ventas,
-        total_por_metodo=json.dumps({m.value: float(t) for m, t in por_metodo}),
+        total_por_metodo=json.dumps({(m.value if hasattr(m, 'value') else str(m)): float(t) for m, t in por_metodo}),
         observaciones=body.observaciones,
     )
     db.add(cierre)
@@ -545,7 +545,7 @@ def reporte_ventas(
         top_productos=[{"nombre": r[0], "vendidos": int(r[1]), "ingresos": float(r[2])} for r in tops],
         margen_productos=[{"nombre": r[0], "ingreso": float(r[1]), "costo": float(r[2]), "margen": float(r[3])} for r in margen],
         ventas_por_dia=[{"dia": str(r[0]), "total": float(r[1]), "cantidad": int(r[2])} for r in por_dia],
-        ventas_por_metodo=[{"metodo": r[0].value, "cantidad": int(r[1]), "total": float(r[2])} for r in por_pago],
+        ventas_por_metodo=[{"metodo": (r[0].value if hasattr(r[0], 'value') else str(r[0])), "cantidad": int(r[1]), "total": float(r[2])} for r in por_pago],
     )
 
 @rep_router.get("/audit-log", response_model=list)
