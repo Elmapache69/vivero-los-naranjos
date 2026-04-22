@@ -60,7 +60,6 @@ const del    = (path)        => api('DELETE', path);
 function saveTokens(access, refresh) {
   state.accessToken  = access;
   state.refreshToken = refresh;
-  // Guardar refresh token en sessionStorage (no localStorage por seguridad)
   sessionStorage.setItem('rt', refresh);
   scheduleTokenRefresh();
 }
@@ -89,21 +88,8 @@ async function tryRefreshToken() {
 }
 
 function scheduleTokenRefresh() {
-  // Refrescar token cada 7 horas (access token dura 8h)
   clearTimeout(state.refreshTimer);
-  state.refreshTimer = setTimeout(tryRefreshToken, 7 * 60 * 60 * 1000);
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  SIDEBAR RESPONSIVE
-// ══════════════════════════════════════════════════════════════════
-function toggleSidebar() {
-  const s = document.getElementById('sidebar');
-  if (s) s.classList.toggle('open');
-}
-function closeSidebar() {
-  const s = document.getElementById('sidebar');
-  if (s) s.classList.remove('open');
+  state.refreshTimer = setTimeout(tryRefreshToken, 7 * 60 * 60 * 1000); // 7 horas
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -120,7 +106,6 @@ async function doLogin() {
     if (!data) return;
 
     if (data.requires_2fa) {
-      // Mostrar panel 2FA
       document.getElementById('panel-login').style.display = 'none';
       document.getElementById('panel-2fa').style.display = 'block';
       document.querySelector('#totp-inputs input').focus();
@@ -134,7 +119,6 @@ async function doLogin() {
   }
 }
 
-// 2FA — navegación entre inputs de código
 function totpNext(input, idx) {
   input.value = input.value.replace(/\D/g, '');
   const inputs = document.querySelectorAll('#totp-inputs input');
@@ -145,7 +129,11 @@ function totpNext(input, idx) {
 async function submit2FA() {
   const inputs = document.querySelectorAll('#totp-inputs input');
   const code = Array.from(inputs).map(i => i.value).join('');
-  if (code.length < 6) { document.getElementById('totp-error').style.display = 'block'; document.getElementById('totp-error').textContent = 'Ingresa el código completo de 6 dígitos'; return; }
+  if (code.length < 6) { 
+    document.getElementById('totp-error').style.display = 'block'; 
+    document.getElementById('totp-error').textContent = 'Ingresa el código completo de 6 dígitos'; 
+    return; 
+  }
 
   setLoginLoading(true);
   try {
@@ -158,7 +146,6 @@ async function submit2FA() {
   } catch (e) {
     document.getElementById('totp-error').style.display = 'block';
     document.getElementById('totp-error').textContent = e.message;
-    // Limpiar inputs
     document.querySelectorAll('#totp-inputs input').forEach(i => i.value = '');
     document.querySelector('#totp-inputs input').focus();
   } finally {
@@ -179,14 +166,14 @@ async function onLoginSuccess(data) {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
 
-  // Topbar user info
   const nombre = state.usuario.nombre;
   const initials = nombre.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
   const rolLabel = { admin: 'Admin', cajero: 'Cajero', bodeguero: 'Bodega' };
+  
   document.getElementById('user-avatar').textContent = initials;
   document.getElementById('user-nombre-top').textContent = nombre.split(' ')[0];
   document.getElementById('user-rol-badge').textContent = rolLabel[state.usuario.rol] || state.usuario.rol;
-  // Sidebar footer
+  
   const sbNombre = document.getElementById('sb-user-nombre');
   const sbRol = document.getElementById('sb-user-rol');
   if (sbNombre) sbNombre.textContent = nombre;
@@ -200,7 +187,35 @@ async function onLoginSuccess(data) {
   aplicarMenuSegunRol();
 }
 
-// ── Definición de menús por rol ──────────────────────────────────
+function doLogout() {
+  clearTimeout(state.refreshTimer);
+  sessionStorage.removeItem('rt');
+  Object.assign(state, { usuario: null, accessToken: null, refreshToken: null, carro: [], productos: [], clientes: [] });
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  resetLogin();
+  document.getElementById('login-pass').value = '';
+  
+  const sideNav = document.getElementById('sidebar-nav');
+  if (sideNav) sideNav.innerHTML = '';
+  const bn = document.getElementById('bottom-nav');
+  if (bn) bn.innerHTML = '';
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById('login-error');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+function setLoginLoading(loading) {
+  const btn = document.getElementById('btn-login');
+  const btn2 = document.getElementById('btn-2fa');
+  [btn, btn2].forEach(b => { if (b) b.disabled = loading; });
+}
+
+// ══════════════════════════════════════════════════════════════════
+//  NAVEGACIÓN BASADA EN ROLES
+// ══════════════════════════════════════════════════════════════════
 const MENUS = {
   admin: [
     { id: 'dashboard', icon: '📊', label: 'Dashboard', section: 'General' },
@@ -230,7 +245,6 @@ const MENUS = {
   ],
 };
 
-// Bottom nav items (máx 5 para móvil)
 const BOTTOM_NAV = {
   admin:     ['dashboard','pos','reportes','usuarios','seguridad'],
   cajero:    ['pos','seguridad'],
@@ -243,7 +257,6 @@ function construirNavegacion() {
   const bottomIds = BOTTOM_NAV[rol] || BOTTOM_NAV.admin;
   const bottomItems = bottomIds.map(id => items.find(i => i.id === id)).filter(Boolean);
 
-  // Sidebar (desktop)
   const sideNav = document.getElementById('sidebar-nav');
   if (sideNav) {
     let html = '';
@@ -258,7 +271,6 @@ function construirNavegacion() {
     sideNav.innerHTML = html;
   }
 
-  // Bottom nav (móvil)
   const bn = document.getElementById('bottom-nav');
   if (bn) {
     bn.innerHTML = bottomItems.map(item => `
@@ -275,34 +287,32 @@ function aplicarMenuSegunRol() {
   showPage(firstPage[rol] || 'dashboard');
 }
 
-function doLogout() {
-  clearTimeout(state.refreshTimer);
-  sessionStorage.removeItem('rt');
-  Object.assign(state, { usuario: null, accessToken: null, refreshToken: null, carro: [], productos: [], clientes: [] });
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-  resetLogin();
-  document.getElementById('login-pass').value = '';
-  // Reset nav
-  const sideNav = document.getElementById('sidebar-nav');
-  if (sideNav) sideNav.innerHTML = '';
-  const bn = document.getElementById('bottom-nav');
-  if (bn) bn.innerHTML = '';
-}
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.s-nav-item').forEach(n => {
+    n.classList.toggle('active', n.dataset.page === name);
+  });
+  document.querySelectorAll('.nav-btn').forEach(n => {
+    n.classList.toggle('active', n.dataset.page === name);
+  });
+  
+  const pg = document.getElementById(`page-${name}`);
+  if (pg) pg.classList.add('active');
 
-function showLoginError(msg) {
-  const el = document.getElementById('login-error');
-  el.textContent = msg; el.style.display = 'block';
-}
-
-function setLoginLoading(loading) {
-  const btn = document.getElementById('btn-login');
-  const btn2 = document.getElementById('btn-2fa');
-  [btn, btn2].forEach(b => { if (b) b.disabled = loading; });
+  const loaders = {
+    dashboard: cargarDashboard, pos: renderPOS,
+    productos: cargarProductos, fichas: cargarFichas,
+    clientes: cargarClientes, proveedores: cargarProveedores,
+    compras: cargarCompras, ventas: cargarVentas,
+    mermas: cargarMermas, reportes: cargarReporte,
+    cierre: cargarCierre, usuarios: cargarUsuarios,
+    seguridad: cargarSeguridad, auditoria: cargarAuditoria,
+  };
+  loaders[name]?.();
 }
 
 // ══════════════════════════════════════════════════════════════════
-//  CARGAR DATOS GLOBALES
+//  CARGAS GLOBALES
 // ══════════════════════════════════════════════════════════════════
 async function cargarDatos() {
   const [productos, categorias, fichas, clientes, proveedores] = await Promise.all([
@@ -322,36 +332,7 @@ async function cargarConfiguracion() {
       state.permisos = {};
       cfgs.forEach(c => { state.permisos[c.clave] = c.valor; });
     }
-  } catch { /* no fatal */ }
-}
-
-// ══════════════════════════════════════════════════════════════════
-//  NAVEGACIÓN
-// ══════════════════════════════════════════════════════════════════
-function showPage(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  // Sidebar desktop
-  document.querySelectorAll('.s-nav-item').forEach(n => {
-    n.classList.toggle('active', n.dataset.page === name);
-  });
-  // Bottom nav móvil
-  document.querySelectorAll('.nav-btn').forEach(n => {
-    n.classList.toggle('active', n.dataset.page === name);
-  });
-  const pg = document.getElementById(`page-${name}`);
-  if (pg) pg.classList.add('active');
-  closeSidebar();
-
-  const loaders = {
-    dashboard: cargarDashboard, pos: renderPOS,
-    productos: cargarProductos, fichas: cargarFichas,
-    clientes: cargarClientes, proveedores: cargarProveedores,
-    compras: cargarCompras, ventas: cargarVentas,
-    mermas: cargarMermas, reportes: cargarReporte,
-    cierre: cargarCierre, usuarios: cargarUsuarios,
-    seguridad: cargarSeguridad, auditoria: cargarAuditoria,
-  };
-  loaders[name]?.();
+  } catch { /* ignorar errores silenciosos */ }
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -388,7 +369,6 @@ async function cargarDashboard() {
           </div>`).join('')}</div>`
       : emptyChart('Sin ventas este mes');
 
-    // Alertas de stock
     const alertas = state.productos.filter(p => p.stock <= p.stock_minimo && p.is_active);
     document.getElementById('dash-alertas').innerHTML = alertas.length
       ? `<div class="table-wrap"><table>
@@ -404,24 +384,23 @@ async function cargarDashboard() {
 }
 
 // ══════════════════════════════════════════════════════════════════
-//  POS
+//  PUNTO DE VENTA (POS)
 // ══════════════════════════════════════════════════════════════════
 let _catActiva = '';
 
 function renderPOS() {
-  // Category pills
   const catsEl = document.getElementById('pos-cats');
   if (catsEl) {
     catsEl.innerHTML = `<div class="cat-pill active" onclick="selCat(this,'')">Todas</div>` +
       state.categorias.map(c => `<div class="cat-pill" onclick="selCat(this,'${c.id}')">${c.nombre}</div>`).join('');
   }
-  // Client selector
+  
   const selCli = document.getElementById('pos-cliente');
   if (selCli) {
     selCli.innerHTML = '<option value="">Sin cliente</option>' +
       state.clientes.map(c => `<option value="${c.id}">${c.nombre}${c.tipo !== 'regular' ? ' ⭐' : ''}</option>`).join('');
   }
-  // Cajero permissions
+  
   if (state.usuario.rol === 'cajero') {
     const showDesc = state.permisos['perm_cajero_descuento'] === 'true';
     const showCli  = state.permisos['perm_cajero_clientes']  === 'true';
@@ -446,7 +425,6 @@ function toggleCarro(open) {
   if (sheet) sheet.classList.toggle('open', open);
 }
 
-// Emoji por categoría
 function catEmoji(nombre) {
   const map = {'interior':'🪴','exterior':'🌳','suculenta':'🌵','cactus':'🌵','árbol':'🌲','semilla':'🌱','fertilizante':'🧪','sustrato':'🪨','herramienta':'🔧','maceta':'🏺'};
   const low = (nombre||'').toLowerCase();
@@ -572,6 +550,7 @@ async function procesarVenta() {
   const total = Math.max(0, sub - desc);
   const metodo = document.getElementById('metodo-pago').value;
   const ef = parseFloat(document.getElementById('efectivo-recibido').value) || 0;
+  
   if (metodo === 'efectivo' && ef > 0 && ef < total) { toast('Efectivo insuficiente para el total', 'error'); return; }
 
   try {
@@ -587,6 +566,7 @@ async function procesarVenta() {
     if (v.vuelto > 0) msg += ` | Vuelto: ${fmt(v.vuelto)}`;
     toast(msg);
     limpiarCarro();
+    toggleCarro(false); // Cerrar panel en móvil post-compra
     await cargarDatos();
     filtrarPOS();
   } catch (e) { toast(e.message, 'error'); }
@@ -935,7 +915,13 @@ async function cargarCierre() {
   } catch (e) { toast(e.message, 'error'); }
 }
 
-function calcularDiferencia() { const ef = parseFloat(v('cierre-efectivo').value) || 0; const preview = document.getElementById('cierre-preview'); preview.style.display = 'block'; preview.innerHTML = `Efectivo ingresado: <strong>${fmt(ef)}</strong>`; preview.style.background = 'var(--leaf-bg)'; }
+function calcularDiferencia() { 
+  const ef = parseFloat(v('cierre-efectivo').value) || 0; 
+  const preview = document.getElementById('cierre-preview'); 
+  preview.style.display = 'block'; 
+  preview.innerHTML = `Efectivo ingresado: <strong>${fmt(ef)}</strong>`; 
+  preview.style.background = 'var(--leaf-bg)'; 
+}
 
 async function realizarCierre() {
   const ef = parseFloat(v('cierre-efectivo').value) || 0;
@@ -989,9 +975,33 @@ async function cargarUsuarios() {
   if (tc) tc.checked = state.permisos['perm_cajero_clientes']  === 'true';
 }
 
-function abrirModalUsuario() { ['usr-nombre','usr-username','usr-password'].forEach(id => v(id).value = ''); v('usr-rol').value = 'cajero'; actualizarDescripcionRol(); abrirModal('modal-usuario'); }
-function actualizarDescripcionRol() { const desc = { cajero: `🧾 <strong>Cajero</strong> — Acceso al Punto de Venta.${state.permisos['perm_cajero_descuento']==='true'?' Puede aplicar descuentos.':' Sin descuentos.'}`, bodeguero: `📦 <strong>Bodeguero</strong> — Inventario, fichas y mermas. Sin acceso a ventas ni finanzas.`, admin: `👑 <strong>Administrador</strong> — Acceso completo a todos los módulos.` }; document.getElementById('desc-rol').innerHTML = desc[v('usr-rol').value] || ''; }
-async function guardarUsuario() { const body = { nombre: v('usr-nombre').value, username: v('usr-username').value, password: v('usr-password').value, rol: v('usr-rol').value }; if (!body.nombre || !body.username || !body.password) { toast('Todos los campos son obligatorios', 'error'); return; } try { await post('/usuarios', body); toast(`Usuario @${body.username} creado ✅`); cerrarModal('modal-usuario'); cargarUsuarios(); } catch (e) { toast(e.message, 'error'); } }
+function abrirModalUsuario() { 
+  ['usr-nombre','usr-username','usr-password'].forEach(id => v(id).value = ''); 
+  v('usr-rol').value = 'cajero'; 
+  actualizarDescripcionRol(); 
+  abrirModal('modal-usuario'); 
+}
+
+function actualizarDescripcionRol() { 
+  const desc = { 
+    cajero: `🧾 <strong>Cajero</strong> — Acceso al Punto de Venta.${state.permisos['perm_cajero_descuento']==='true'?' Puede aplicar descuentos.':' Sin descuentos.'}`, 
+    bodeguero: `📦 <strong>Bodeguero</strong> — Inventario, fichas y mermas. Sin acceso a ventas ni finanzas.`, 
+    admin: `👑 <strong>Administrador</strong> — Acceso completo a todos los módulos.` 
+  }; 
+  document.getElementById('desc-rol').innerHTML = desc[v('usr-rol').value] || ''; 
+}
+
+async function guardarUsuario() { 
+  const body = { nombre: v('usr-nombre').value, username: v('usr-username').value, password: v('usr-password').value, rol: v('usr-rol').value }; 
+  if (!body.nombre || !body.username || !body.password) { toast('Todos los campos son obligatorios', 'error'); return; } 
+  try { 
+    await post('/usuarios', body); 
+    toast(`Usuario @${body.username} creado ✅`); 
+    cerrarModal('modal-usuario'); 
+    cargarUsuarios(); 
+  } catch (e) { toast(e.message, 'error'); } 
+}
+
 async function toggleUsuario(id) { try { await patch(`/usuarios/${id}`, {}); cargarUsuarios(); } catch (e) { toast(e.message, 'error'); } }
 async function eliminarUsuario(id) { if (!confirm('¿Eliminar este usuario?')) return; try { await del(`/usuarios/${id}`); toast('Usuario desactivado'); cargarUsuarios(); } catch (e) { toast(e.message, 'error'); } }
 async function guardarPermiso(clave, valor) { try { await put(`/configuracion/${clave}`, { valor: String(valor) }); state.permisos[clave] = String(valor); toast(`Permiso actualizado ✅`); } catch (e) { toast(e.message, 'error'); } }
@@ -1097,7 +1107,9 @@ function cerrarModal(id) { document.getElementById(id).classList.remove('open');
 
 function filtrarTablaLive(inputId, tbodyId) {
   const q = (v(inputId)?.value || '').toLowerCase();
-  document.querySelectorAll(`#${tbodyId} tr`).forEach(tr => { tr.style.display = tr.textContent.toLowerCase().includes(q) ? '' : 'none'; });
+  document.querySelectorAll(`#${tbodyId} tr, #${tbodyId} .user-card, #${tbodyId} .ficha-card`).forEach(el => { 
+    el.style.display = el.textContent.toLowerCase().includes(q) ? '' : 'none'; 
+  });
 }
 
 let toastTimer;
@@ -1120,6 +1132,11 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
 loadStoredTokens();
 if (state.refreshToken) {
   tryRefreshToken().then(ok => {
-    if (ok) get('/auth/me').then(me => { if (me) { state.usuario = me; onLoginSuccess({ access_token: state.accessToken, refresh_token: state.refreshToken, requires_2fa: false, user: me }); } });
+    if (ok) get('/auth/me').then(me => { 
+      if (me) { 
+        state.usuario = me; 
+        onLoginSuccess({ access_token: state.accessToken, refresh_token: state.refreshToken, requires_2fa: false, user: me }); 
+      } 
+    });
   });
 }

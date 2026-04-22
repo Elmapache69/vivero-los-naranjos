@@ -293,11 +293,39 @@ tbody tr:last-child td{border-bottom:none;}
       <span class="user-role-badge" id="user-rol-badge">—</span>
     </div>
   </div>
+  
   <div class="sidebar" id="sidebar">
     <div class="sidebar-brand"><h2>🍊 Jardín y Vivero<br>Los Naranjos</h2><span>Sistema de gestión</span></div>
-    <div id="sidebar-nav"></div>
+    
+    <div id="sidebar-nav">
+      <div class="sidebar-section-title">General</div>
+      <div class="s-nav-item active" onclick="showPage('dashboard')"><span class="icon">📊</span>Dashboard</div>
+      <div class="s-nav-item" onclick="showPage('pos')"><span class="icon">🧾</span>Punto de Venta</div>
+      
+      <div class="sidebar-section-title">Inventario</div>
+      <div class="s-nav-item" onclick="showPage('productos')"><span class="icon">🌿</span>Productos</div>
+      <div class="s-nav-item" onclick="showPage('fichas')"><span class="icon">🪴</span>Fichas de Plantas</div>
+      <div class="s-nav-item" onclick="showPage('mermas')"><span class="icon">🍂</span>Mermas</div>
+      
+      <div class="sidebar-section-title">Comercial</div>
+      <div class="s-nav-item" onclick="showPage('clientes')"><span class="icon">👥</span>Clientes</div>
+      <div class="s-nav-item" onclick="showPage('proveedores')"><span class="icon">🚚</span>Proveedores</div>
+      <div class="s-nav-item" onclick="showPage('compras')"><span class="icon">📦</span>Compras</div>
+      <div class="s-nav-item" onclick="showPage('ventas')"><span class="icon">💰</span>Historial Ventas</div>
+      
+      <div class="sidebar-section-title">Reportes</div>
+      <div class="s-nav-item" onclick="showPage('reportes')"><span class="icon">📈</span>Estadísticas</div>
+      <div class="s-nav-item" onclick="showPage('cierre')"><span class="icon">🔒</span>Cierre de Caja</div>
+      
+      <div class="sidebar-section-title">Sistema</div>
+      <div class="s-nav-item" onclick="showPage('usuarios')"><span class="icon">🔐</span>Usuarios y Roles</div>
+      <div class="s-nav-item" onclick="showPage('seguridad')"><span class="icon">🛡️</span>Seguridad</div>
+      <div class="s-nav-item" onclick="showPage('auditoria')"><span class="icon">📋</span>Log de Auditoría</div>
+    </div>
+    
     <div class="sidebar-footer"><p id="sb-user-nombre">—</p><small id="sb-user-rol">—</small><br><button class="btn-logout" onclick="doLogout()">Cerrar sesión</button></div>
   </div>
+
   <div class="main">
     <div class="page active" id="page-dashboard">
       <div class="section-header"><div><div class="section-title">Buenos días 🌱</div><div class="section-sub" id="fecha-hoy"></div></div><button class="btn btn-secondary btn-sm" onclick="cargarDashboard()">↻</button></div>
@@ -401,10 +429,23 @@ tbody tr:last-child td{border-bottom:none;}
       <div class="card"><div class="card-body" id="audit-list"></div></div>
     </div>
   </div>
-  <nav class="bottom-nav" id="bottom-nav"></nav>
+  
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="nav-btn active" onclick="showPage('dashboard')">
+      <span class="nav-icon">📊</span><span class="nav-label">Inicio</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('pos')">
+      <span class="nav-icon">🧾</span><span class="nav-label">Vender</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('productos')">
+      <span class="nav-icon">🌿</span><span class="nav-label">Stock</span>
+    </button>
+    <button class="nav-btn" onclick="showPage('fichas')">
+      <span class="nav-icon">🪴</span><span class="nav-label">Fichas</span>
+    </button>
+  </nav>
 </div>
 
-<!-- MODALS -->
 <div class="modal-overlay" id="modal-usuario"><div class="modal"><div class="modal-handle"></div><div class="modal-header"><h3>Nuevo Usuario</h3><button class="modal-close" onclick="cerrarModal('modal-usuario')">✕</button></div><div class="modal-body"><div class="form-grid"><div class="form-field" style="grid-column:1/-1"><label>Nombre completo *</label><input type="text" id="usr-nombre"></div><div class="form-field"><label>Usuario *</label><input type="text" id="usr-username" placeholder="solo minúsculas y _"></div><div class="form-field"><label>Contraseña *</label><input type="password" id="usr-password"></div><div class="form-field" style="grid-column:1/-1"><label>Rol *</label><select id="usr-rol" onchange="actualizarDescripcionRol()"><option value="cajero">Cajero — Punto de Venta</option><option value="bodeguero">Bodeguero — Inventario</option><option value="admin">Administrador — Acceso completo</option></select></div></div><div id="desc-rol" style="margin-top:.9rem;padding:.8rem 1rem;background:var(--leaf-bg);border-radius:var(--r-sm);font-size:.84rem;color:var(--ink2);line-height:1.6"></div><div class="form-actions"><button class="btn btn-secondary" onclick="cerrarModal('modal-usuario')">Cancelar</button><button class="btn btn-primary" onclick="guardarUsuario()">Crear</button></div></div></div></div>
 
 <div class="modal-overlay" id="modal-producto"><div class="modal"><div class="modal-handle"></div><div class="modal-header"><h3 id="modal-prod-title">Nuevo Producto</h3><button class="modal-close" onclick="cerrarModal('modal-producto')">✕</button></div><div class="modal-body"><input type="hidden" id="prod-id"><div class="form-grid"><div class="form-field" style="grid-column:1/-1"><label>Nombre *</label><input type="text" id="prod-nombre"></div><div class="form-field"><label>Código / SKU</label><input type="text" id="prod-codigo"></div><div class="form-field"><label>Categoría</label><select id="prod-categoria"></select></div><div class="form-field"><label>Ficha de planta</label><select id="prod-ficha"><option value="">Sin ficha</option></select></div><div class="form-field"><label>Precio venta ($) *</label><input type="number" id="prod-pventa" min="0"></div><div class="form-field"><label>Precio costo ($)</label><input type="number" id="prod-pcosto" min="0"></div><div class="form-field"><label>Stock</label><input type="number" id="prod-stock" min="0"></div><div class="form-field"><label>Stock mínimo</label><input type="number" id="prod-stockmin" value="5" min="0"></div><div class="form-field"><label>Unidad</label><select id="prod-unidad"><option>unidad</option><option>bolsa</option><option>kilo</option><option>litro</option><option>paquete</option><option>caja</option></select></div></div><div class="form-actions"><button class="btn btn-secondary" onclick="cerrarModal('modal-producto')">Cancelar</button><button class="btn btn-primary" onclick="guardarProducto()">Guardar</button></div></div></div></div>
